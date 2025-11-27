@@ -41,10 +41,14 @@ const generateSingleImage = async (
   parts.push({
     text: `Generate a high-quality, photorealistic Christmas-themed baby portrait. 
     Subject: A baby resembling the features in the provided reference images. 
-    Style: Professional photography, soft bokeh, warm pastel tones, magical Christmas atmosphere, sharp focus on eyes.
+    Style: Professional studio photography, soft bokeh, warm pastel tones, magical Christmas atmosphere.
     Scenario: ${scenario}
-    Ensure the baby's identity (hair, skin tone, general features) is consistent with the reference photos provided. 
-    Do not include text or watermarks. Aspect Ratio 1:1.`
+    Constraints: 
+    - Output must be a clean, borderless square image.
+    - NO white frames, NO polaroid borders, NO text, NO watermarks.
+    - Full bleed composition.
+    - Ensure the baby's identity (hair, skin tone, general features) is consistent with the reference photos.
+    Aspect Ratio 1:1.`
   });
 
   const response = await ai.models.generateContent({
@@ -90,7 +94,6 @@ export const generateChristmasCollage = async (
   let completed = 0;
 
   // We will run these sequentially to avoid overwhelming the client/browser/rate-limits
-  // In a production backend, these could be parallelized with queue management.
   for (let i = 0; i < SCENARIOS.length; i++) {
     try {
       const url = await generateSingleImage(ai, referenceImages, SCENARIOS[i]);
@@ -107,7 +110,7 @@ export const generateChristmasCollage = async (
       // We continue even if one fails, to give the user partial results
       results.push({
         id: `fail-${i}`,
-        url: "https://picsum.photos/1024/1024?grayscale", // Fallback placeholder if generation fails
+        url: "https://placehold.co/1024x1024/png?text=Retry", // Fallback placeholder
         scenarioIndex: i,
         prompt: "Generation Failed"
       });

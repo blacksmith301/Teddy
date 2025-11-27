@@ -5,79 +5,78 @@ interface TreeGridProps {
   images: GeneratedImage[];
 }
 
+// Coordinate mapping for the 10-image tree (percentages relative to the template background)
+// Tuned to align with the green boxes in the provided template.
+const POSITIONS = [
+  // Row 1 (1 image)
+  { top: '12.8%', left: '41.3%', width: '17.2%', rotate: '-2deg' },
+  // Row 2 (2 images)
+  { top: '26.8%', left: '31.2%', width: '17.2%', rotate: '-3deg' },
+  { top: '26.8%', left: '51.3%', width: '17.2%', rotate: '2deg' },
+  // Row 3 (3 images)
+  { top: '40.8%', left: '21.0%', width: '17.2%', rotate: '-2deg' },
+  { top: '40.8%', left: '41.3%', width: '17.2%', rotate: '1deg' },
+  { top: '40.8%', left: '61.6%', width: '17.2%', rotate: '-2deg' },
+  // Row 4 (4 images)
+  { top: '54.8%', left: '10.8%', width: '17.2%', rotate: '-3deg' },
+  { top: '54.8%', left: '31.2%', width: '17.2%', rotate: '2deg' },
+  { top: '54.8%', left: '51.4%', width: '17.2%', rotate: '-2deg' },
+  { top: '54.8%', left: '71.8%', width: '17.2%', rotate: '3deg' },
+];
+
+// Using a direct link proxy for the imgur album content or the user provided image.
+// Note: If this link expires, replace with the local asset or persistent URL.
+const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.jpeg";
+
 const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
-  // We expect 10 images.
-  // Layout:
-  // Row 1: 1 image (Index 0)
-  // Row 2: 2 images (Index 1, 2)
-  // Row 3: 3 images (Index 3, 4, 5)
-  // Row 4: 4 images (Index 6, 7, 8, 9)
-
-  const getImagesForRange = (start: number, count: number) => {
-    return images.slice(start, start + count);
-  };
-
-  const renderPhotoCard = (img: GeneratedImage, index: number) => (
-    <div key={img.id} className="relative group bg-white p-2 shadow-lg transform rotate-[-1deg] hover:rotate-0 transition-all duration-300 hover:z-10 hover:scale-105">
-      {/* Tape effect */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-4 bg-yellow-400/80 rotate-2 shadow-sm z-20"></div>
-      
-      <div className="aspect-square w-full overflow-hidden bg-gray-100 relative">
-         <img 
-           src={img.url} 
-           alt={`Christmas Portrait ${index + 1}`} 
-           className="w-full h-full object-cover"
-         />
-         {/* Glossy overlay effect */}
-         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="flex flex-col items-center gap-4 py-8 max-w-4xl mx-auto">
-      {/* Star on top */}
-      <div className="text-yellow-400 text-6xl drop-shadow-md animate-pulse mb-2">
-        ★
-      </div>
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
+      <div className="relative w-full shadow-2xl rounded-sm overflow-hidden bg-white">
+        {/* Background Template */}
+        <img 
+          src={TEMPLATE_URL} 
+          alt="Christmas Tree Template" 
+          className="w-full h-auto block"
+          onError={(e) => {
+            // Fallback if the direct imgur link fails (common with albums)
+            (e.target as HTMLImageElement).src = "https://placehold.co/1080x1350/E0F7FA/1e293b?text=Template+Load+Error";
+          }}
+        />
+        
+        {/* Overlaid Generated Images */}
+        {POSITIONS.map((pos, index) => {
+          const img = images[index];
+          // We render placeholders if the image hasn't generated yet so the user sees where they will go
+          const imageUrl = img ? img.url : null;
 
-      {/* Row 1 */}
-      <div className="flex justify-center w-full max-w-[200px]">
-        {getImagesForRange(0, 1).map((img, i) => renderPhotoCard(img, 0 + i))}
-      </div>
+          if (!imageUrl) return null;
 
-      {/* Row 2 */}
-      <div className="flex justify-center gap-4 w-full max-w-[420px]">
-        {getImagesForRange(1, 2).map((img, i) => renderPhotoCard(img, 1 + i))}
+          return (
+            <div
+              key={img?.id || index}
+              className="absolute overflow-hidden bg-gray-200"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                aspectRatio: '1/1',
+                transform: `rotate(${pos.rotate})`,
+              }}
+            >
+              <img 
+                src={imageUrl} 
+                alt={`Portrait ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              {/* Subtle inner shadow to blend with the 'cutout' or frame look */}
+              <div className="absolute inset-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] pointer-events-none"></div>
+            </div>
+          );
+        })}
       </div>
-
-      {/* Row 3 */}
-      <div className="flex justify-center gap-4 w-full max-w-[640px]">
-        {getImagesForRange(3, 3).map((img, i) => renderPhotoCard(img, 3 + i))}
-      </div>
-
-      {/* Row 4 */}
-      <div className="flex justify-center gap-4 w-full max-w-[860px]">
-        {getImagesForRange(6, 4).map((img, i) => renderPhotoCard(img, 6 + i))}
-      </div>
-
-      {/* Teddyy Branding Footer Area */}
-      <div className="mt-8 text-center">
-        <div className="flex justify-center items-end gap-4 mb-4">
-             {/* Placeholder for the bears in the reference image - using emojis or generic icons for now */}
-             <div className="text-6xl filter drop-shadow-lg">🧸</div>
-             <div className="bg-white px-6 py-4 rounded-xl shadow-lg border-2 border-blue-200">
-                <h3 className="text-2xl font-festive text-blue-500 font-bold">TEDDYY</h3>
-                <p className="text-xs text-gray-500 tracking-wider">PREMIUM BABY DIAPERS</p>
-             </div>
-             <div className="text-6xl filter drop-shadow-lg transform scale-x-[-1]">🧸</div>
-        </div>
-        <h2 className="text-3xl md:text-5xl font-festive text-blue-500 drop-shadow-white stroke-2 font-bold mb-2">
-           Make every moment magical
-        </h2>
-        <h2 className="text-3xl md:text-5xl font-festive text-pink-500 font-bold drop-shadow-md">
-           MERRY CHRISTMAS!
-        </h2>
+      
+      <div className="mt-6 text-center text-slate-500 text-sm">
+        <p>Your magical Christmas collage is ready to print!</p>
       </div>
     </div>
   );
