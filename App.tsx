@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 // @ts-ignore
 import html2canvas from 'html2canvas';
@@ -181,7 +180,7 @@ const App: React.FC = () => {
               </div>
             </div>
             <h2 className="text-3xl font-festive text-blue-600 mb-2">Creating Christmas Magic...</h2>
-            <p className="text-slate-500 mb-8">Designing photo {progress} of 10</p>
+            <p className="text-slate-500 mb-8">{Math.round((progress / 10) * 100)}% Complete</p>
             
             <div className="w-full max-w-md bg-gray-200 rounded-full h-4 overflow-hidden">
               <div 

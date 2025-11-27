@@ -27,7 +27,7 @@ const generateSingleImage = async (
   // Construct parts: Prompt + Reference Images
   const parts: any[] = [];
   
-  // Add reference images (limit to 3 for token efficiency if needed, but SDK handles it)
+  // Add reference images (limit to 4 for token efficiency if needed)
   referenceImages.slice(0, 4).forEach((img) => {
     parts.push({
       inlineData: {
@@ -51,6 +51,8 @@ const generateSingleImage = async (
     Aspect Ratio 1:1.`
   });
 
+  // Switch to gemini-3-pro-image-preview as requested
+  // Note: 500x500 resolution is not supported by the API. "1K" (1024x1024) is the minimum size.
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-image-preview',
     contents: {
@@ -59,7 +61,7 @@ const generateSingleImage = async (
     config: {
       imageConfig: {
         aspectRatio: "1:1",
-        imageSize: "1K"
+        imageSize: "1K", 
       }
     },
   });
@@ -76,7 +78,7 @@ const generateSingleImage = async (
 
 /**
  * Orchestrates the generation of all 10 images.
- * Optimized to run in batches to speed up the process while respecting rate limits.
+ * Optimized to run completely in parallel for maximum speed.
  */
 export const generateChristmasCollage = async (
   referenceImages: UploadedImage[],
@@ -87,54 +89,42 @@ export const generateChristmasCollage = async (
     throw new Error("API Key not found. Please select a key.");
   }
 
-  // Create a NEW instance each time to ensure key is fresh
+  // Create a NEW instance to ensure key is fresh
   const ai = new GoogleGenAI({ apiKey });
   
-  const results: GeneratedImage[] = [];
   let completedCount = 0;
   
-  // Increased to 5 to maximize browser concurrency (standard limit is 6 connections per host).
-  // This reduces the number of batches from 4 to 2, significantly speeding up the total time.
-  const BATCH_SIZE = 5; 
-
-  for (let i = 0; i < SCENARIOS.length; i += BATCH_SIZE) {
-    const batchScenarios = SCENARIOS.slice(i, i + BATCH_SIZE);
-    
-    // Create a batch of promises
-    const batchPromises = batchScenarios.map(async (scenario, index) => {
-      const actualIndex = i + index;
-      try {
-        const url = await generateSingleImage(ai, referenceImages, scenario);
-        return {
-          id: `gen-${actualIndex}-${Date.now()}`,
-          url,
-          scenarioIndex: actualIndex,
-          prompt: scenario,
-          success: true
-        };
-      } catch (error) {
-        console.error(`Failed to generate scenario ${actualIndex}:`, error);
-        return {
-          id: `fail-${actualIndex}`,
-          url: "https://placehold.co/1024x1024/png?text=Retry", // Fallback
-          scenarioIndex: actualIndex,
-          prompt: "Generation Failed",
-          success: false
-        };
-      }
-    });
-
-    // Wait for the current batch to finish
-    const batchResults = await Promise.all(batchPromises);
-
-    // Add to results and update progress
-    batchResults.forEach(res => {
-      results.push(res);
+  // We fire all requests simultaneously. 
+  // The browser will manage the connection queue (typically ~6 concurrent connections),
+  // ensuring the fastest possible throughput without the "straggler" delays of batching.
+  const promises = SCENARIOS.map(async (scenario, index) => {
+    try {
+      const url = await generateSingleImage(ai, referenceImages, scenario);
       completedCount++;
-    });
-    
-    onProgress(completedCount);
-  }
+      onProgress(completedCount);
+      return {
+        id: `gen-${index}-${Date.now()}`,
+        url,
+        scenarioIndex: index,
+        prompt: scenario,
+        success: true
+      };
+    } catch (error) {
+      console.error(`Failed to generate scenario ${index}:`, error);
+      completedCount++;
+      onProgress(completedCount);
+      return {
+        id: `fail-${index}`,
+        url: "https://placehold.co/1024x1024/png?text=Retry", // Fallback
+        scenarioIndex: index,
+        prompt: "Generation Failed",
+        success: false
+      };
+    }
+  });
+
+  // Wait for all to complete (UI updates progress individually via onProgress)
+  const results = await Promise.all(promises);
 
   // Sort results by index to ensure they match the tree positions correctly
   return results.sort((a, b) => a.scenarioIndex - b.scenarioIndex);
