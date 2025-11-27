@@ -25,7 +25,7 @@ const POSITIONS = [
 ];
 
 // Using the direct .jpg link which is often more reliable for Imgur albums/images
-const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.jpg";
+const TEMPLATE_URL = "https://imgur.com/a/teddy-n4BXuQV";
 
 const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
   return (
