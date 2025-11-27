@@ -24,10 +24,8 @@ const POSITIONS = [
   { top: '54.8%', left: '71.8%', width: '17.2%', rotate: '3deg' },
 ];
 
-// Using a direct link for the imgur content.
-// Updated to match user provided album: https://imgur.com/a/teddy-n4BXuQV
-// We use the direct image ID n4BXuQV which is embedded in the album URL.
-const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.png";
+// Using the direct .jpg link which is often more reliable for Imgur albums/images
+const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.jpg";
 
 const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
   return (
@@ -42,9 +40,13 @@ const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
           alt="Christmas Tree Template" 
           className="w-full h-auto block"
           crossOrigin="anonymous" // Important: Allows canvas export without tainting
+          referrerPolicy="no-referrer" // Important: Prevents hotlink blocking
           onError={(e) => {
             // Fallback if the direct imgur link fails (common with albums)
-            (e.target as HTMLImageElement).src = "https://placehold.co/1080x1350/E0F7FA/1e293b?text=Template+Load+Error";
+            const target = e.target as HTMLImageElement;
+            if (!target.src.includes('placehold.co')) {
+               target.src = "https://placehold.co/1080x1350/E0F7FA/1e293b?text=Template+Load+Error";
+            }
           }}
         />
         
