@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 import { UploadedImage } from '../types';
 
@@ -99,39 +100,57 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onImagesSelected, isLoading }) 
   }, [onImagesSelected]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="border-4 border-dashed border-blue-300 bg-white/50 rounded-3xl p-8 text-center hover:bg-white/80 transition-colors">
-        <div className="mb-6">
-          <div className="w-20 h-20 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-            📷
+    <div className="w-full max-w-3xl mx-auto">
+      <div className="relative group">
+        {/* Soft Baby Blue Glow Behind */}
+        <div className="absolute -inset-4 bg-sky-100 rounded-[3rem] blur-xl opacity-60 group-hover:opacity-80 transition duration-1000 group-hover:duration-500"></div>
+        
+        <div className="relative border-4 border-dashed border-sky-200 bg-white/80 backdrop-blur-md rounded-[2.5rem] p-10 md:p-20 text-center shadow-xl transition-all hover:border-sky-300 hover:bg-white/90">
+          
+          <div className="mb-10">
+            <div className="w-28 h-28 bg-sky-50 text-sky-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md border-4 border-white transform group-hover:scale-110 transition-transform duration-500">
+              {/* Generic Photo Icon instead of baby emoji */}
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
+            </div>
+            <h3 className="text-4xl font-festive text-sky-900 mb-4">Upload Your Photos</h3>
+            <p className="text-slate-500 text-lg font-elegant max-w-md mx-auto leading-relaxed">
+              Select <strong>3 to 10 photos</strong>. <br/>
+              <span className="text-sm text-sky-500/80 mt-2 block">Tip: Clear faces and bright smiles work best!</span>
+            </p>
           </div>
-          <h3 className="text-2xl font-bold text-gray-700 mb-2">Upload Baby Photos</h3>
-          <p className="text-gray-500 mb-6">
-            Select <strong>3 to 10 photos</strong> of your baby. Clear, close-up shots of the face work best!
-          </p>
+
+          <label className={`
+            inline-flex items-center px-12 py-5 
+            bg-gradient-to-r from-sky-300 to-sky-400
+            text-white font-bold text-xl rounded-full cursor-pointer 
+            shadow-lg shadow-sky-200/50
+            transform transition-all duration-300 
+            hover:scale-105 hover:shadow-sky-300/70 hover:from-sky-400 hover:to-sky-500
+            active:scale-95 active:shadow-inner
+            ${(isLoading || isProcessing) ? 'opacity-75 cursor-wait' : ''}
+          `}>
+            <span className="mr-3 text-2xl">❄️</span>
+            <span className="tracking-wide font-sans drop-shadow-sm">
+              {isProcessing ? 'Preparing...' : (isLoading ? 'Creating Magic...' : 'Choose Photos')}
+            </span>
+            <input 
+              type="file" 
+              multiple 
+              accept="image/*" 
+              onChange={handleFileChange} 
+              className="hidden" 
+              disabled={isLoading || isProcessing}
+            />
+          </label>
+
+          {error && (
+            <div className="mt-10 p-4 bg-red-50 text-red-800 rounded-2xl border border-red-100 text-base font-medium animate-bounce-in">
+              ⚠️ {error}
+            </div>
+          )}
         </div>
-
-        <label className={`
-          inline-block px-8 py-4 bg-pink-500 text-white font-bold rounded-full cursor-pointer 
-          shadow-lg transform transition-transform hover:scale-105 active:scale-95
-          ${(isLoading || isProcessing) ? 'opacity-50 cursor-not-allowed' : ''}
-        `}>
-          <input 
-            type="file" 
-            multiple 
-            accept="image/*" 
-            onChange={handleFileChange} 
-            className="hidden" 
-            disabled={isLoading || isProcessing}
-          />
-          {isProcessing ? 'Optimizing Images...' : (isLoading ? 'Processing...' : 'Choose Photos')}
-        </label>
-
-        {error && (
-          <div className="mt-4 p-3 bg-red-100 text-red-600 rounded-lg text-sm font-semibold">
-            {error}
-          </div>
-        )}
       </div>
     </div>
   );
