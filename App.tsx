@@ -1,4 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
+// @ts-ignore: html2canvas loaded via ImportMap/CDN
+import html2canvas from 'html2canvas';
 import { AppStatus, GeneratedImage, UploadedImage, SCENARIOS } from './types';
 import UploadZone from './components/UploadZone';
 import TreeGrid from './components/TreeGrid';
@@ -10,6 +13,7 @@ const App: React.FC = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [progress, setProgress] = useState<number>(0);
   const [hasKey, setHasKey] = useState<boolean>(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   useEffect(() => {
     // Check for API Key on mount
@@ -18,8 +22,8 @@ const App: React.FC = () => {
 
   const handleApiKeyRequest = async () => {
     await promptApiKey();
-    const keyExists = await checkApiKey();
-    setHasKey(keyExists);
+    // Assume key selection was successful to mitigate race condition where checkApiKey() might still return false
+    setHasKey(true);
   };
 
   const handleImagesSelected = (images: UploadedImage[]) => {
@@ -29,8 +33,7 @@ const App: React.FC = () => {
   const startGeneration = async () => {
     if (!hasKey) {
       await handleApiKeyRequest();
-      // Double check after request
-      if (!(await checkApiKey())) return;
+      // Double check skipped to trust the explicit user action and handleApiKeyRequest logic
     }
 
     if (uploadedImages.length < 3) {
@@ -59,6 +62,30 @@ const App: React.FC = () => {
     setUploadedImages([]);
     setGeneratedImages([]);
     setProgress(0);
+  };
+
+  const downloadCollage = async () => {
+    const element = document.getElementById('collage-capture-target');
+    if (!element) return;
+    
+    setIsDownloading(true);
+    try {
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        scale: 2, // Higher resolution
+        backgroundColor: null
+      });
+      
+      const link = document.createElement('a');
+      link.download = 'teddyy-christmas-collage.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error("Download failed", err);
+      alert("Failed to download image. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -168,7 +195,7 @@ const App: React.FC = () => {
         {/* Results State */}
         {status === AppStatus.COMPLETE && (
           <div className="animate-fade-in">
-             <div className="flex justify-between items-center mb-8 max-w-4xl mx-auto">
+             <div className="flex justify-between items-center mb-8 max-w-4xl mx-auto px-4">
                <button 
                  onClick={resetApp}
                  className="flex items-center text-blue-600 font-bold hover:underline"
@@ -176,10 +203,18 @@ const App: React.FC = () => {
                  ← Start Over
                </button>
                <button 
-                 onClick={() => window.print()}
-                 className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-md hover:bg-blue-700"
+                 onClick={downloadCollage}
+                 disabled={isDownloading}
+                 className={`
+                   bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-md hover:bg-blue-700 flex items-center gap-2
+                   ${isDownloading ? 'opacity-75 cursor-wait' : ''}
+                 `}
                >
-                 Print Card 🖨️
+                 {isDownloading ? (
+                   <><span>Saving...</span> <span className="animate-spin">⏳</span></>
+                 ) : (
+                   <><span>Download Image</span> 📥</>
+                 )}
                </button>
              </div>
 

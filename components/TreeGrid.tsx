@@ -31,12 +31,16 @@ const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.jpeg";
 const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
-      <div className="relative w-full shadow-2xl rounded-sm overflow-hidden bg-white">
+      {/* 
+        Added id="collage-capture-target" to targeting by html2canvas 
+      */}
+      <div id="collage-capture-target" className="relative w-full shadow-2xl rounded-sm overflow-hidden bg-white">
         {/* Background Template */}
         <img 
           src={TEMPLATE_URL} 
           alt="Christmas Tree Template" 
           className="w-full h-auto block"
+          crossOrigin="anonymous" // Important: Allows canvas export without tainting
           onError={(e) => {
             // Fallback if the direct imgur link fails (common with albums)
             (e.target as HTMLImageElement).src = "https://placehold.co/1080x1350/E0F7FA/1e293b?text=Template+Load+Error";
@@ -76,7 +80,7 @@ const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
       </div>
       
       <div className="mt-6 text-center text-slate-500 text-sm">
-        <p>Your magical Christmas collage is ready to print!</p>
+        <p>Your magical Christmas collage is ready!</p>
       </div>
     </div>
   );

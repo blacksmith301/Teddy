@@ -1,3 +1,4 @@
+
 export interface UploadedImage {
   id: string;
   url: string; // Base64 or Blob URL
