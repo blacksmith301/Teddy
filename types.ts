@@ -11,6 +11,7 @@ export interface GeneratedImage {
   url: string;
   scenarioIndex: number;
   prompt: string;
+  success?: boolean;
 }
 
 export enum AppStatus {

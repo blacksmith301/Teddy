@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+// @ts-ignore
 import html2canvas from 'html2canvas';
 import { AppStatus, GeneratedImage, UploadedImage, SCENARIOS } from './types';
 import UploadZone from './components/UploadZone';

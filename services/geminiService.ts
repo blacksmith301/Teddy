@@ -92,7 +92,10 @@ export const generateChristmasCollage = async (
   
   const results: GeneratedImage[] = [];
   let completedCount = 0;
-  const BATCH_SIZE = 3; // Generate 3 images at a time to speed up process
+  
+  // Increased to 5 to maximize browser concurrency (standard limit is 6 connections per host).
+  // This reduces the number of batches from 4 to 2, significantly speeding up the total time.
+  const BATCH_SIZE = 5; 
 
   for (let i = 0; i < SCENARIOS.length; i += BATCH_SIZE) {
     const batchScenarios = SCENARIOS.slice(i, i + BATCH_SIZE);
