@@ -24,9 +24,10 @@ const POSITIONS = [
   { top: '54.8%', left: '71.8%', width: '17.2%', rotate: '3deg' },
 ];
 
-// Using a direct link proxy for the imgur album content or the user provided image.
-// Note: If this link expires, replace with the local asset or persistent URL.
-const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.jpeg";
+// Using a direct link for the imgur content.
+// Updated to match user provided album: https://imgur.com/a/teddy-n4BXuQV
+// We use the direct image ID n4BXuQV which is embedded in the album URL.
+const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.png";
 
 const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
   return (

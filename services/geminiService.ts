@@ -76,7 +76,7 @@ const generateSingleImage = async (
 
 /**
  * Orchestrates the generation of all 10 images.
- * We run them in sequence or small batches to ensure stability.
+ * Optimized to run in batches to speed up the process while respecting rate limits.
  */
 export const generateChristmasCollage = async (
   referenceImages: UploadedImage[],
@@ -91,33 +91,48 @@ export const generateChristmasCollage = async (
   const ai = new GoogleGenAI({ apiKey });
   
   const results: GeneratedImage[] = [];
-  let completed = 0;
+  let completedCount = 0;
+  const BATCH_SIZE = 3; // Generate 3 images at a time to speed up process
 
-  // We will run these sequentially to avoid overwhelming the client/browser/rate-limits
-  for (let i = 0; i < SCENARIOS.length; i++) {
-    try {
-      const url = await generateSingleImage(ai, referenceImages, SCENARIOS[i]);
-      results.push({
-        id: `gen-${i}-${Date.now()}`,
-        url,
-        scenarioIndex: i,
-        prompt: SCENARIOS[i]
-      });
-      completed++;
-      onProgress(completed);
-    } catch (error) {
-      console.error(`Failed to generate scenario ${i}:`, error);
-      // We continue even if one fails, to give the user partial results
-      results.push({
-        id: `fail-${i}`,
-        url: "https://placehold.co/1024x1024/png?text=Retry", // Fallback placeholder
-        scenarioIndex: i,
-        prompt: "Generation Failed"
-      });
-      completed++;
-      onProgress(completed);
-    }
+  for (let i = 0; i < SCENARIOS.length; i += BATCH_SIZE) {
+    const batchScenarios = SCENARIOS.slice(i, i + BATCH_SIZE);
+    
+    // Create a batch of promises
+    const batchPromises = batchScenarios.map(async (scenario, index) => {
+      const actualIndex = i + index;
+      try {
+        const url = await generateSingleImage(ai, referenceImages, scenario);
+        return {
+          id: `gen-${actualIndex}-${Date.now()}`,
+          url,
+          scenarioIndex: actualIndex,
+          prompt: scenario,
+          success: true
+        };
+      } catch (error) {
+        console.error(`Failed to generate scenario ${actualIndex}:`, error);
+        return {
+          id: `fail-${actualIndex}`,
+          url: "https://placehold.co/1024x1024/png?text=Retry", // Fallback
+          scenarioIndex: actualIndex,
+          prompt: "Generation Failed",
+          success: false
+        };
+      }
+    });
+
+    // Wait for the current batch to finish
+    const batchResults = await Promise.all(batchPromises);
+
+    // Add to results and update progress
+    batchResults.forEach(res => {
+      results.push(res);
+      completedCount++;
+    });
+    
+    onProgress(completedCount);
   }
 
-  return results;
+  // Sort results by index to ensure they match the tree positions correctly
+  return results.sort((a, b) => a.scenarioIndex - b.scenarioIndex);
 };
