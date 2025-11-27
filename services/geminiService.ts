@@ -51,17 +51,18 @@ const generateSingleImage = async (
     Aspect Ratio 1:1.`
   });
 
-  // Switch to gemini-3-pro-image-preview as requested
-  // Note: 500x500 resolution is not supported by the API. "1K" (1024x1024) is the minimum size.
+  // Switch to gemini-2.5-flash-image for speed.
+  // Note: This model does not support 'imageSize' configuration (defaults to 1024x1024), 
+  // but is significantly faster than the Pro model.
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-image-preview',
+    model: 'gemini-2.5-flash-image',
     contents: {
       parts: parts,
     },
     config: {
       imageConfig: {
         aspectRatio: "1:1",
-        imageSize: "1K", 
+        // imageSize is NOT supported on gemini-2.5-flash-image
       }
     },
   });
