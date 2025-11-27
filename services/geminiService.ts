@@ -99,9 +99,11 @@ export const generateChristmasCollage = async (
   // The browser will manage the connection queue (typically ~6 concurrent connections),
   // ensuring the fastest possible throughput without the "straggler" delays of batching.
   const promises = SCENARIOS.map(async (scenario, index) => {
+    console.log(`[Gemini] Starting generation for image ${index + 1}/${SCENARIOS.length}`);
     try {
       const url = await generateSingleImage(ai, referenceImages, scenario);
       completedCount++;
+      console.log(`[Gemini] Completed image ${index + 1}. Progress: ${completedCount}/${SCENARIOS.length}`);
       onProgress(completedCount);
       return {
         id: `gen-${index}-${Date.now()}`,
@@ -111,7 +113,7 @@ export const generateChristmasCollage = async (
         success: true
       };
     } catch (error) {
-      console.error(`Failed to generate scenario ${index}:`, error);
+      console.error(`[Gemini] Failed to generate scenario ${index}:`, error);
       completedCount++;
       onProgress(completedCount);
       return {

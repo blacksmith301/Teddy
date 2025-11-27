@@ -8,6 +8,61 @@ interface UploadZoneProps {
 
 const UploadZone: React.FC<UploadZoneProps> = ({ onImagesSelected, isLoading }) => {
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+  const resizeAndCompressImage = (file: File): Promise<UploadedImage> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 800; // Resize to max 800px for faster API upload
+          let width = img.width;
+          let height = img.height;
+
+          // Maintain aspect ratio
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error("Failed to get canvas context"));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG at 85% quality
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          const base64Data = dataUrl.split(',')[1];
+          
+          resolve({
+            id: `${file.name}-${Date.now()}`,
+            url: dataUrl,
+            base64Data,
+            mimeType: 'image/jpeg'
+          });
+        };
+        img.onerror = (err) => reject(err);
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -22,34 +77,25 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onImagesSelected, isLoading }) 
       return;
     }
 
+    setIsProcessing(true);
     const processedImages: UploadedImage[] = [];
 
-    for (const file of fileArray) {
-      if (!file.type.startsWith('image/')) continue;
+    try {
+      // Process images in parallel
+      const promises = fileArray
+        .filter(file => file.type.startsWith('image/'))
+        .map(file => resizeAndCompressImage(file));
 
-      try {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+      const results = await Promise.all(promises);
+      processedImages.push(...results);
 
-        // Extract raw base64 data (remove "data:image/xyz;base64," prefix)
-        const base64Data = base64.split(',')[1];
-
-        processedImages.push({
-          id: `${file.name}-${Date.now()}`,
-          url: base64,
-          base64Data,
-          mimeType: file.type
-        });
-      } catch (e) {
-        console.error("Error reading file", file.name, e);
-      }
+      onImagesSelected(processedImages);
+    } catch (e) {
+      console.error("Error processing files", e);
+      setError("Failed to process some images. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
-
-    onImagesSelected(processedImages);
   }, [onImagesSelected]);
 
   return (
@@ -68,7 +114,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onImagesSelected, isLoading }) 
         <label className={`
           inline-block px-8 py-4 bg-pink-500 text-white font-bold rounded-full cursor-pointer 
           shadow-lg transform transition-transform hover:scale-105 active:scale-95
-          ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+          ${(isLoading || isProcessing) ? 'opacity-50 cursor-not-allowed' : ''}
         `}>
           <input 
             type="file" 
@@ -76,9 +122,9 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onImagesSelected, isLoading }) 
             accept="image/*" 
             onChange={handleFileChange} 
             className="hidden" 
-            disabled={isLoading}
+            disabled={isLoading || isProcessing}
           />
-          {isLoading ? 'Processing...' : 'Choose Photos'}
+          {isProcessing ? 'Optimizing Images...' : (isLoading ? 'Processing...' : 'Choose Photos')}
         </label>
 
         {error && (
