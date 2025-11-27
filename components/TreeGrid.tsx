@@ -24,8 +24,8 @@ const POSITIONS = [
   { top: '54.8%', left: '71.8%', width: '17.2%', rotate: '3deg' },
 ];
 
-// Using the direct .jpg link which is often more reliable for Imgur albums/images
-const TEMPLATE_URL = "https://imgur.com/a/teddy-n4BXuQV";
+// Using the direct .png link to ensure the image loads correctly (not the album link)
+const TEMPLATE_URL = "https://i.imgur.com/n4BXuQV.png";
 
 const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
   return (
@@ -42,7 +42,8 @@ const TreeGrid: React.FC<TreeGridProps> = ({ images }) => {
           crossOrigin="anonymous" // Important: Allows canvas export without tainting
           referrerPolicy="no-referrer" // Important: Prevents hotlink blocking
           onError={(e) => {
-            // Fallback if the direct imgur link fails (common with albums)
+            console.error("Template failed to load:", e);
+            // Fallback if the direct imgur link fails
             const target = e.target as HTMLImageElement;
             if (!target.src.includes('placehold.co')) {
                target.src = "https://placehold.co/1080x1350/E0F7FA/1e293b?text=Template+Load+Error";
